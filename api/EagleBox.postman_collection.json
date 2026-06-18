@@ -1,0 +1,347 @@
+{
+  "info": {
+    "name": "Eagle Box Cricket API",
+    "description": "Phase 1 — Authentication, Slots, Bookings",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:5001/api/v1", "type": "string" },
+    { "key": "accessToken",  "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "slotId",       "value": "", "type": "string" },
+    { "key": "bookingId",    "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "description": "Check if the API is running"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "description": "Register a new customer. Auto-saves accessToken and refreshToken."
+          }
+        },
+        {
+          "name": "Login — Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@eaglebox.com\",\n  \"password\": \"Admin@2026\"\n}"
+            },
+            "description": "Login as admin. Auto-saves tokens."
+          }
+        },
+        {
+          "name": "Login — Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sathvika@example.com\",\n  \"password\": \"Customer@2026\"\n}"
+            },
+            "description": "Login as customer. Auto-saves tokens."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Get a new access token using the refresh token."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Logout and revoke the refresh token."
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "description": "Get the current user's profile."
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/auth/me",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "description": "Update name or phone number."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slots",
+      "item": [
+        {
+          "name": "List Slots",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/slots?date=2026-06-20&status=available&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["slots"],
+              "query": [
+                { "key": "date",   "value": "2026-06-20" },
+                { "key": "status", "value": "available" },
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "10" }
+              ]
+            },
+            "description": "Get available slots. Filter by date and status. No auth required."
+          }
+        },
+        {
+          "name": "Create Slot (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.slot && json.slot.id) {",
+                  "  pm.collectionVariables.set('slotId', json.slot.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/slots",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slot_date\": \"2026-06-25\",\n  \"start_time\": \"06:00\",\n  \"end_time\": \"07:30\",\n  \"price\": 600\n}"
+            },
+            "description": "Admin only. Creates a new slot. Saves slotId automatically."
+          }
+        },
+        {
+          "name": "Update Slot (Admin)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/slots/{{slotId}}",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 750,\n  \"status\": \"blocked\"\n}"
+            },
+            "description": "Admin only. Update slot price or status."
+          }
+        },
+        {
+          "name": "Delete Slot (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/slots/{{slotId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "description": "Admin only. Soft deletes the slot. Fails if slot has active bookings."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking (Customer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.booking && json.booking.id) {",
+                  "  pm.collectionVariables.set('bookingId', json.booking.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/bookings",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slot_id\": \"{{slotId}}\",\n  \"num_players\": 10,\n  \"notes\": \"Birthday match\"\n}"
+            },
+            "description": "Customer creates a booking. Saves bookingId automatically."
+          }
+        },
+        {
+          "name": "My Bookings (Customer)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/bookings/mine?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "mine"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "description": "Get the current customer's booking history."
+          }
+        },
+        {
+          "name": "All Bookings (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/bookings?status=pending&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings"],
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "search", "value": "",         "disabled": true },
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "10" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "description": "Admin only. Search and filter all bookings."
+          }
+        },
+        {
+          "name": "Update Booking Status (Admin)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/bookings/{{bookingId}}/status",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "description": "Admin only. Valid transitions: pending→confirmed, pending→cancelled, confirmed→completed, confirmed→cancelled."
+          }
+        }
+      ]
+    }
+  ]
+}
