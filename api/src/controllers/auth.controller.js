@@ -1,5 +1,5 @@
 const AuthService = require('../services/auth.service');
-const R = require('../utils/response.utils');
+const R           = require('../utils/response.utils');
 
 const register = async (req, res, next) => {
   try {
@@ -44,4 +44,43 @@ const updateProfile = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { register, login, refresh, logout, getProfile, updateProfile };
+const googleAuth = async (req, res, next) => {
+  try {
+    const { access_token } = req.body;
+    if (!access_token) return R.error(res, 'access_token is required', 400);
+    const { user, accessToken, refreshToken } = await AuthService.googleAuth(access_token, req);
+    return R.success(res, { user, accessToken, refreshToken }, 'Google login successful');
+  } catch (err) { next(err); }
+};
+
+const googleRedirect = (req, res) => {
+  const params = new URLSearchParams({
+    client_id:     process.env.GOOGLE_CLIENT_ID,
+    redirect_uri:  process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5001/api/v1/auth/google/callback',
+    response_type: 'code',
+    scope:         'openid email profile',
+    access_type:   'offline',
+    prompt:        'select_account',
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+};
+
+const googleCallback = async (req, res) => {
+  const { code, error } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+  if (error || !code) {
+    return res.redirect(`${frontendUrl}/login?error=google_cancelled`);
+  }
+
+  try {
+    const { user, accessToken, refreshToken } = await AuthService.googleAuthCode(code, req);
+    const params = new URLSearchParams({ token: accessToken, refresh: refreshToken, name: user.name });
+    res.redirect(`${frontendUrl}/auth/callback?${params}`);
+  } catch (err) {
+    console.error('Google callback error:', err.message);
+    res.redirect(`${frontendUrl}/login?error=google_failed`);
+  }
+};
+
+module.exports = { register, login, refresh, logout, getProfile, updateProfile, googleAuth, googleRedirect, googleCallback };

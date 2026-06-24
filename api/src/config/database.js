@@ -9,7 +9,7 @@ const pool = new Pool({
   ssl:      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   max:      10,
   idleTimeoutMillis:    30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 15000,
 });
 
 pool.on('error', (err) => {
@@ -20,13 +20,19 @@ const query = (text, params) => pool.query(text, params);
 
 const getClient = () => pool.connect();
 
-const testConnection = async () => {
-  const client = await pool.connect();
-  try {
-    await client.query('SELECT NOW()');
-    console.log('✅ PostgreSQL connected');
-  } finally {
-    client.release();
+const testConnection = async (retries = 3) => {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      const client = await pool.connect();
+      await client.query('SELECT NOW()');
+      client.release();
+      console.log('✅ PostgreSQL connected');
+      return;
+    } catch (err) {
+      if (i === retries) throw err;
+      console.log(`⏳ DB connection attempt ${i} failed, retrying...`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
   }
 };
 

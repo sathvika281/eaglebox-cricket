@@ -24,6 +24,18 @@
       ::-webkit-scrollbar-track { background: #0f0f11; }
       ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
       ::selection { background: #ffffff; color: #0f0f11; }
+
+      /* Desktop: sidebar nav pushes content right */
+      @media (min-width: 768px) {
+        #root { padding-left: 220px; }
+        .ebc-bottom-nav { display: none !important; }
+        .ebc-sidebar    { display: flex !important; }
+      }
+      /* Mobile: bottom nav only */
+      @media (max-width: 767px) {
+        .ebc-sidebar    { display: none !important; }
+        .ebc-bottom-nav { display: flex !important; }
+      }
     </style>
   </head>
   <body>

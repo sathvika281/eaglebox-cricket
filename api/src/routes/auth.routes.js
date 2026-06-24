@@ -5,11 +5,12 @@ const { authenticate }  = require('../middleware/auth.middleware');
 const { validate }      = require('../middleware/validate.middleware');
 
 const registerSchema = Joi.object({
-  name:     Joi.string().min(2).max(100).required(),
-  email:    Joi.string().email().lowercase().required(),
-  phone:    Joi.string().pattern(/^\d{10}$/).required().messages({ 'string.pattern.base': 'Phone must be 10 digits' }),
-  password: Joi.string().min(6).required()
-              .messages({ 'string.min': 'Password must be at least 6 characters' }),
+  name:          Joi.string().min(2).max(100).required(),
+  email:         Joi.string().email().lowercase().required(),
+  phone:         Joi.string().pattern(/^\d{10}$/).required().messages({ 'string.pattern.base': 'Phone must be 10 digits' }),
+  password:      Joi.string().min(6).required()
+                   .messages({ 'string.min': 'Password must be at least 6 characters' }),
+  referral_code: Joi.string().alphanum().min(4).max(10).uppercase(),
 });
 
 const loginSchema = Joi.object({
@@ -58,6 +59,9 @@ const updateSchema = Joi.object({
  *       409:
  *         description: Email or phone already registered
  */
+router.post('/google', ctrl.googleAuth);
+router.get('/google/redirect', ctrl.googleRedirect);
+router.get('/google/callback', ctrl.googleCallback);
 router.post('/register', validate(registerSchema), ctrl.register);
 
 /**

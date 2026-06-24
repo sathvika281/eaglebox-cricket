@@ -133,6 +133,19 @@ const updateStatus = async (id, status, triggeredBy, notes) => {
   }
 };
 
+const findByToken = async (token) => {
+  const { rows } = await query(
+    `SELECT b.*, u.name AS customer_name, u.email AS customer_email, u.phone AS customer_phone,
+            s.slot_date, s.start_time, s.end_time, s.price AS slot_price
+     FROM bookings b
+     JOIN users u ON b.user_id = u.id
+     JOIN slots s ON b.slot_id = s.id
+     WHERE b.verification_token = $1 AND b.is_deleted = FALSE`,
+    [token]
+  );
+  return rows[0] || null;
+};
+
 const softDelete = async (id) => {
   const { rows } = await query(
     `UPDATE bookings SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW()
@@ -142,4 +155,4 @@ const softDelete = async (id) => {
   return rows[0] || null;
 };
 
-module.exports = { findAll, findById, isSlotBooked, create, updateStatus, softDelete };
+module.exports = { findAll, findById, isSlotBooked, create, updateStatus, softDelete, findByToken };

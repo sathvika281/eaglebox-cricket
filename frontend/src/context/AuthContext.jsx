@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login as apiLogin, logout as apiLogout, getMe, updateMe } from '../api/auth.api';
+import { login as apiLogin, logout as apiLogout, getMe, updateMe, googleLogin as apiGoogleLogin } from '../api/auth.api';
 
 const AuthContext = createContext(null);
 
@@ -43,6 +43,16 @@ export function AuthProvider({ children }) {
     clearAuth();
   };
 
+  const loginWithGoogle = async (accessToken) => {
+    const { data } = await apiGoogleLogin(accessToken);
+    localStorage.setItem('ebc_access_token', data.accessToken);
+    localStorage.setItem('ebc_refresh_token', data.refreshToken);
+    setUser(data.user);
+    return data.user;
+  };
+
+  const setUserFromTokens = (user) => setUser(user);
+
   const updateProfile = async (fields) => {
     const { data } = await updateMe(fields);
     setUser(data.user);
@@ -56,6 +66,8 @@ export function AuthProvider({ children }) {
       isAuthenticated: !!user,
       isAdmin: user?.role === 'admin',
       login,
+      loginWithGoogle,
+      setUserFromTokens,
       logout,
       updateProfile,
     }}>

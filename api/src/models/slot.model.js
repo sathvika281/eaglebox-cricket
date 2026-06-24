@@ -1,22 +1,35 @@
 const { query } = require('../config/database');
 
-const findAll = async ({ date, status, page = 1, limit = 10 }) => {
+const findAll = async ({ date, status, time_from, time_to, price_min, price_max, sort_by, page = 1, limit = 10 }) => {
   const offset = (page - 1) * limit;
   const conditions = ['s.is_deleted = FALSE'];
   const params = [];
 
-  if (date)   { params.push(date);   conditions.push(`s.slot_date = $${params.length}`); }
-  if (status) { params.push(status); conditions.push(`s.status = $${params.length}`); }
+  if (date)       { params.push(date);       conditions.push(`s.slot_date = $${params.length}`); }
+  if (status)     { params.push(status);     conditions.push(`s.status = $${params.length}`); }
+  if (time_from)  { params.push(time_from);  conditions.push(`s.start_time >= $${params.length}`); }
+  if (time_to)    { params.push(time_to);    conditions.push(`s.start_time <= $${params.length}`); }
+  if (price_min)  { params.push(price_min);  conditions.push(`s.price >= $${params.length}`); }
+  if (price_max)  { params.push(price_max);  conditions.push(`s.price <= $${params.length}`); }
 
   const where = conditions.join(' AND ');
 
+  const orderMap = {
+    price_asc:  's.price ASC, s.slot_date ASC, s.start_time ASC',
+    price_desc: 's.price DESC, s.slot_date ASC, s.start_time ASC',
+    time_asc:   's.slot_date ASC, s.start_time ASC',
+    popularity: 'booking_count DESC, s.slot_date ASC, s.start_time ASC',
+  };
+  const orderBy = orderMap[sort_by] || 's.slot_date ASC, s.start_time ASC';
+
   const [{ rows: data }, { rows: countRows }] = await Promise.all([
     query(
-      `SELECT s.*, u.name AS created_by_name
+      `SELECT s.*, u.name AS created_by_name,
+              (SELECT COUNT(*) FROM bookings b WHERE b.slot_id = s.id AND b.is_deleted = FALSE) AS booking_count
        FROM slots s
        LEFT JOIN users u ON s.created_by = u.id
        WHERE ${where}
-       ORDER BY s.slot_date ASC, s.start_time ASC
+       ORDER BY ${orderBy}
        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, limit, offset]
     ),

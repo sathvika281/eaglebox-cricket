@@ -5,6 +5,7 @@ import { getMyBookings } from '../api/bookings.api';
 import { formatDateShort, formatSlotTime } from '../utils/formatters';
 import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
+import WeatherCard from '../components/WeatherCard';
 
 const STATUS_CONFIG = {
   pending:   { color: '#FF8C00', bg: 'rgba(255,140,0,0.1)',   label: 'PENDING'   },
@@ -88,6 +89,36 @@ export default function Dashboard() {
             </div>
             <span className="material-symbols-outlined" style={{ ...s.opsArrow, color: '#555' }}>arrow_forward</span>
           </button>
+        </div>
+      </div>
+
+      {/* Weather */}
+      <div style={s.section}>
+        <p style={s.sectionTag}>TODAY'S CONDITIONS</p>
+        <WeatherCard />
+      </div>
+
+      {/* Quick Links */}
+      <div style={s.section}>
+        <p style={s.sectionTag}>EXPLORE</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[
+            { icon: 'badge',              label: 'CRICKET ID',  sub: 'Your digital cricket identity', path: '/cricket-id' },
+            { icon: 'groups',             label: 'MY TEAMS',    sub: 'Manage your teams',       path: '/teams' },
+            { icon: 'sports_cricket',     label: 'MATCHES',     sub: 'Schedule friendlies',     path: '/matches' },
+            { icon: 'workspace_premium',  label: 'REWARDS',     sub: 'View your points',        path: '/rewards' },
+            { icon: 'stadium',            label: 'VENUE',       sub: 'Venue info & hours',      path: '/venue' },
+            { icon: 'emoji_events',       label: 'LEADERBOARD', sub: 'Top teams & players',     path: '/leaderboard' },
+            { icon: 'handshake',          label: 'REFERRALS',   sub: 'Invite & earn points',    path: '/referrals' },
+            { icon: 'photo_library',      label: 'GALLERY',     sub: 'Match photos & memories', path: '/gallery' },
+          ].map(({ icon, label, sub, path }) => (
+            <button key={path} onClick={() => navigate(path)}
+              style={{ background: '#161616', border: '1px solid #222', borderRadius: 12, padding: '14px 12px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 26, color: '#BFFF00' }}>{icon}</span>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '0.06em' }}>{label}</div>
+              <div style={{ fontSize: 11, color: '#555' }}>{sub}</div>
+            </button>
+          ))}
         </div>
       </div>
 

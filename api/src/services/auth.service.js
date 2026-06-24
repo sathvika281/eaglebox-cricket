@@ -1,5 +1,6 @@
-const UserModel  = require('../models/user.model');
-const AuditModel = require('../models/audit.model');
+const UserModel      = require('../models/user.model');
+const AuditModel     = require('../models/audit.model');
+const ReferralService = require('./referral.service');
 const { hash, compare }                       = require('../utils/bcrypt.utils');
 const { signAccess, signRefresh, verifyRefresh, hashToken } = require('../utils/jwt.utils');
 
@@ -17,7 +18,7 @@ const _buildTokens = async (user) => {
   return { accessToken, refreshToken };
 };
 
-const register = async ({ name, email, phone, password }, req) => {
+const register = async ({ name, email, phone, password, referral_code }, req) => {
   const [existingEmail, existingPhone] = await Promise.all([
     UserModel.findByEmail(email),
     UserModel.findByPhone(phone),
@@ -35,6 +36,10 @@ const register = async ({ name, email, phone, password }, req) => {
     newValues: { name, email, phone, role: 'customer' },
     ip: req?.ip, userAgent: req?.headers?.['user-agent'],
   });
+
+  if (referral_code) {
+    await ReferralService.processReferral(user.id, referral_code).catch(() => {});
+  }
 
   const tokens = await _buildTokens(user);
   return { user, ...tokens };
@@ -113,4 +118,66 @@ const updateProfile = async (userId, fields, req) => {
   return updated;
 };
 
-module.exports = { register, login, refresh, logout, getProfile, updateProfile };
+const _findOrCreateGoogleUser = async (googleId, email, name, req) => {
+  let user = await UserModel.findByGoogleId(googleId);
+  if (!user) {
+    user = await UserModel.findByEmail(email);
+    if (user) {
+      user = await UserModel.updateGoogleId(user.id, googleId);
+    } else {
+      const password_hash = await hash(require('crypto').randomBytes(32).toString('hex'));
+      user = await UserModel.create({ name, email, password_hash, google_id: googleId });
+      await AuditModel.log({
+        userId: user.id, action: 'USER_REGISTER_GOOGLE',
+        entityType: 'users', entityId: user.id,
+        newValues: { name, email, role: 'customer', method: 'google' },
+        ip: req?.ip, userAgent: req?.headers?.['user-agent'],
+      });
+    }
+  }
+  if (user.is_deleted) throw Object.assign(new Error('Account has been deactivated'), { statusCode: 403, expose: true });
+  const { password_hash: _, ...safeUser } = user;
+  return safeUser;
+};
+
+const googleAuth = async (accessToken, req) => {
+  const res = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw Object.assign(new Error('Google token verification failed'), { statusCode: 401, expose: true });
+  const { id: googleId, email, name } = await res.json();
+  if (!email) throw Object.assign(new Error('Google account has no email'), { statusCode: 400, expose: true });
+  const safeUser = await _findOrCreateGoogleUser(googleId, email, name, req);
+  const tokens = await _buildTokens(safeUser);
+  return { user: safeUser, ...tokens };
+};
+
+const googleAuthCode = async (code, req) => {
+  const callbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5001/api/v1/auth/google/callback';
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id:     process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri:  callbackUrl,
+      grant_type:    'authorization_code',
+    }),
+  });
+  const tokenData = await tokenRes.json();
+  if (tokenData.error) throw new Error(`Google token exchange failed: ${tokenData.error_description || tokenData.error}`);
+
+  const userRes = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  });
+  if (!userRes.ok) throw new Error('Failed to fetch Google user info');
+  const { id: googleId, email, name } = await userRes.json();
+  if (!email) throw new Error('Google account has no email');
+
+  const safeUser = await _findOrCreateGoogleUser(googleId, email, name, req);
+  const tokens = await _buildTokens(safeUser);
+  return { user: safeUser, ...tokens };
+};
+
+module.exports = { register, login, refresh, logout, getProfile, updateProfile, googleAuth, googleAuthCode };

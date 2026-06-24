@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { register as apiRegister } from '../api/auth.api';
 
 export default function Register() {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
 
-  const [form, setForm]       = useState({ name: '', email: '', phone: '', password: '' });
+  const [form, setForm]       = useState({ name: '', email: '', phone: '', password: '', referral_code: (searchParams.get('ref') || '').toUpperCase() });
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleGoogleSignIn = () => {
+    window.location.href = 'http://localhost:5001/api/v1/auth/google/redirect';
+  };
 
   if (isAuthenticated) { navigate('/dashboard', { replace: true }); return null; }
 
@@ -24,7 +29,7 @@ export default function Register() {
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     try {
       setLoading(true);
-      await apiRegister(name.trim(), email.trim(), phone.trim(), password);
+      await apiRegister(name.trim(), email.trim(), phone.trim(), password, form.referral_code.trim() || undefined);
       await login(email.trim(), password);
       navigate('/dashboard', { replace: true });
     } catch (err) {
@@ -72,6 +77,19 @@ export default function Register() {
             </React.Fragment>
           ))}
 
+          <label style={s.fieldLabel}>REFERRAL CODE <span style={{ color: '#444', fontWeight: 400 }}>(OPTIONAL)</span></label>
+          <div style={s.inputWrap}>
+            <span className="material-symbols-outlined" style={s.inputIcon}>card_giftcard</span>
+            <input
+              type="text"
+              placeholder="Friend's referral code"
+              value={form.referral_code}
+              onChange={set('referral_code')}
+              style={{ ...s.input, textTransform: 'uppercase' }}
+              maxLength={10}
+            />
+          </div>
+
           <label style={s.fieldLabel}>PASSWORD</label>
           <div style={s.inputWrap}>
             <span className="material-symbols-outlined" style={s.inputIcon}>lock</span>
@@ -99,6 +117,22 @@ export default function Register() {
             )}
           </button>
         </form>
+
+        <div style={s.dividerRow}>
+          <div style={s.dividerLine} />
+          <span style={s.dividerText}>OR SIGN UP WITH</span>
+          <div style={s.dividerLine} />
+        </div>
+
+        <button style={s.googleBtn} onClick={handleGoogleSignIn} disabled={loading} type="button">
+          <svg width="16" height="16" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Continue with Google
+        </button>
 
         <p style={s.switchText}>
           Already have an account?{' '}
@@ -196,7 +230,20 @@ const s = {
     fontWeight: 700, letterSpacing: '0.1em', fontFamily: "'JetBrains Mono', monospace",
     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  switchText: { textAlign: 'center', fontSize: '13px', color: '#666', marginTop: '20px' },
+  dividerRow: { display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0 12px' },
+  dividerLine: { flex: 1, height: '1px', backgroundColor: '#222' },
+  dividerText: {
+    fontFamily: "'JetBrains Mono', monospace", fontSize: '9px',
+    letterSpacing: '0.12em', color: '#444', whiteSpace: 'nowrap',
+  },
+  googleBtn: {
+    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: '8px', backgroundColor: '#0D0D0D', border: '1px solid #2a2a2a',
+    borderRadius: '8px', color: '#ccc', padding: '12px', fontSize: '13px',
+    cursor: 'pointer', fontFamily: "'Hanken Grotesk', sans-serif",
+    marginBottom: '16px',
+  },
+  switchText: { textAlign: 'center', fontSize: '13px', color: '#666', marginTop: '4px' },
   switchLink: { color: '#BFFF00', textDecoration: 'none', fontWeight: 600 },
   statsRow: { display: 'flex', gap: '32px', position: 'relative', zIndex: 1 },
   stat: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' },

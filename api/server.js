@@ -28,6 +28,9 @@ app.use('/api', rateLimit({
   message: { success: false, message: 'Too many requests. Please try again later.' },
 }));
 
+// ── Static uploads
+app.use('/uploads', require('express').static(require('path').join(__dirname, 'uploads')));
+
 // ── Body parsing
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -54,12 +57,31 @@ app.use(errorHandler);
 // ── Start
 const start = async () => {
   await testConnection();
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`\n🏏 Eagle Box Cricket API v2`);
     console.log(`   Server  → http://localhost:${PORT}`);
     console.log(`   Docs    → http://localhost:${PORT}/api/docs`);
     console.log(`   Health  → http://localhost:${PORT}/health\n`);
   });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use. Kill the existing process and restart.`);
+    } else {
+      console.error('Server error:', err.message);
+    }
+    process.exit(1);
+  });
+
+  const shutdown = () => {
+    server.close(() => {
+      console.log('\n👋 Server shut down cleanly.');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT',  shutdown);
 };
 
 start().catch((err) => {

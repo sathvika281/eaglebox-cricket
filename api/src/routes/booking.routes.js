@@ -1,6 +1,8 @@
-const router = require('express').Router();
-const Joi    = require('joi');
-const ctrl   = require('../controllers/booking.controller');
+const router   = require('express').Router();
+const Joi      = require('joi');
+const ctrl     = require('../controllers/booking.controller');
+const mgmtCtrl = require('../controllers/booking-management.controller');
+
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorize }    = require('../middleware/rbac.middleware');
 const { validate }     = require('../middleware/validate.middleware');
@@ -16,7 +18,7 @@ const statusSchema = Joi.object({
 });
 
 const listQuerySchema = Joi.object({
-  status: Joi.string().valid('pending', 'confirmed', 'cancelled', 'completed'),
+  status: Joi.string().valid('pending', 'confirmed', 'cancelled', 'completed', 'rescheduled'),
   page:   Joi.number().integer().min(1),
   limit:  Joi.number().integer().min(1).max(100),
 });
@@ -148,5 +150,11 @@ router.get('/', authenticate, authorize('admin'), validate(adminQuerySchema, 'qu
  *         description: Booking not found
  */
 router.put('/:id/status', authenticate, authorize('admin'), validate(statusSchema), ctrl.updateBookingStatus);
+
+router.put('/:id/cancel',     authenticate, mgmtCtrl.cancelBooking);
+router.put('/:id/reschedule', authenticate, mgmtCtrl.rescheduleBooking);
+router.get('/verify/:token',  ctrl.verifyToken);
+router.get('/:id/qr',         authenticate, ctrl.getQR);
+router.get('/:id',            authenticate, ctrl.getBookingById);
 
 module.exports = router;

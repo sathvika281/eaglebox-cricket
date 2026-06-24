@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [form, setForm]       = useState({ email: '', password: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const err = searchParams.get('error');
+    if (err === 'google_cancelled') setError('Google sign-in was cancelled.');
+    if (err === 'google_failed') setError('Google sign-in failed. Please try again or use email/password.');
+  }, [searchParams]);
+
+  const handleGoogleSignIn = () => {
+    window.location.href = 'http://localhost:5001/api/v1/auth/google/redirect';
+  };
 
   if (isAuthenticated) { navigate('/dashboard', { replace: true }); return null; }
 
@@ -103,13 +114,14 @@ export default function Login() {
         </div>
 
         <div style={s.socialRow}>
-          <button style={s.socialBtn} disabled>
-            <span style={s.socialIcon}>G</span>
-            Google
-          </button>
-          <button style={s.socialBtn} disabled>
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>apple</span>
-            Apple
+          <button style={s.socialBtnActive} onClick={handleGoogleSignIn} disabled={loading} type="button">
+            <svg width="16" height="16" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Continue with Google
           </button>
         </div>
 
@@ -328,7 +340,7 @@ const s = {
     gap: '10px',
     marginBottom: '20px',
   },
-  socialBtn: {
+  socialBtnActive: {
     flex: 1,
     display: 'flex',
     alignItems: 'center',
@@ -337,15 +349,12 @@ const s = {
     backgroundColor: '#0D0D0D',
     border: '1px solid #2a2a2a',
     borderRadius: '8px',
-    color: '#666',
+    color: '#ccc',
     padding: '12px',
     fontSize: '13px',
-    cursor: 'not-allowed',
+    cursor: 'pointer',
     fontFamily: "'Hanken Grotesk', sans-serif",
-  },
-  socialIcon: {
-    fontWeight: 700,
-    fontSize: '14px',
+    transition: 'border-color 0.15s, color 0.15s',
   },
   switchText: {
     textAlign: 'center',

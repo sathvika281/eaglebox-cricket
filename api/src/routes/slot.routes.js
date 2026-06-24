@@ -21,10 +21,15 @@ const updateSchema = Joi.object({
 }).min(1);
 
 const querySchema = Joi.object({
-  date:   Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
-  status: Joi.string().valid('available', 'booked', 'blocked'),
-  page:   Joi.number().integer().min(1),
-  limit:  Joi.number().integer().min(1).max(100),
+  date:      Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
+  status:    Joi.string().valid('available', 'booked', 'blocked'),
+  time_from: Joi.string().pattern(/^\d{2}:\d{2}$/),
+  time_to:   Joi.string().pattern(/^\d{2}:\d{2}$/),
+  price_min: Joi.number().min(0),
+  price_max: Joi.number().min(0),
+  sort_by:   Joi.string().valid('price_asc', 'price_desc', 'time_asc', 'popularity'),
+  page:      Joi.number().integer().min(1),
+  limit:     Joi.number().integer().min(1).max(100),
 });
 
 /**
