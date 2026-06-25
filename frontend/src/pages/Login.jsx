@@ -19,7 +19,7 @@ export default function Login() {
   }, [searchParams]);
 
   const handleGoogleSignIn = () => {
-    window.location.href = 'http://localhost:5001/api/v1/auth/google/redirect';
+    window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/v1/auth/google/redirect`;
   };
 
   if (isAuthenticated) { navigate('/dashboard', { replace: true }); return null; }
