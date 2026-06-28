@@ -1,6 +1,7 @@
 const UserModel      = require('../models/user.model');
 const AuditModel     = require('../models/audit.model');
 const ReferralService = require('./referral.service');
+const EmailService   = require('./email.service');
 const { hash, compare }                       = require('../utils/bcrypt.utils');
 const { signAccess, signRefresh, verifyRefresh, hashToken } = require('../utils/jwt.utils');
 
@@ -40,6 +41,8 @@ const register = async ({ name, email, phone, password, referral_code }, req) =>
   if (referral_code) {
     await ReferralService.processReferral(user.id, referral_code).catch(() => {});
   }
+
+  EmailService.sendWelcomeEmail({ customerName: user.name, customerEmail: user.email }).catch(() => {});
 
   const tokens = await _buildTokens(user);
   return { user, ...tokens };
@@ -133,6 +136,7 @@ const _findOrCreateGoogleUser = async (googleId, email, name, req) => {
         newValues: { name, email, role: 'customer', method: 'google' },
         ip: req?.ip, userAgent: req?.headers?.['user-agent'],
       });
+      EmailService.sendWelcomeEmail({ customerName: name, customerEmail: email }).catch(() => {});
     }
   }
   if (user.is_deleted) throw Object.assign(new Error('Account has been deactivated'), { statusCode: 403, expose: true });

@@ -249,6 +249,35 @@ const sendQRPass = async ({ customerName, customerEmail, bookingRef, bookingId, 
   await send(customerEmail, `Your Booking Pass — ${bookingRef}`, html);
 };
 
+/* ═══════════════════════════════════════
+   FR-6  Welcome / Registration
+══════════════════════════════════════ */
+const sendWelcomeEmail = async ({ customerName, customerEmail }) => {
+  const html = wrap(`
+    <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.15em;color:#BFFF00;font-family:monospace;text-transform:uppercase;">Welcome to EagleBox</p>
+    <h1 style="margin:0 0 8px;font-size:26px;font-weight:800;color:#0D0D0D;">You're In, ${customerName}!</h1>
+    <p style="margin:0 0 24px;font-size:14px;color:#666;line-height:1.6;">
+      Your account has been created successfully. Book your first cricket slot, join a team, and start climbing the leaderboard!
+    </p>
+
+    <div style="background:#f9f9f9;border-radius:10px;padding:20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        ${field('Name', customerName)}
+        ${field('Email', customerEmail)}
+        ${field('Account', '<span style="color:#22CC66;font-family:monospace;">ACTIVE</span>')}
+      </table>
+    </div>
+
+    <div style="margin-bottom:12px;">${ctaButton('⚡ BOOK A SLOT NOW', `${FRONTEND_URL}/booking`)}</div>
+    ${ctaButton('GO TO DASHBOARD', `${FRONTEND_URL}/dashboard`, '#0D0D0D', '#BFFF00')}
+
+    <p style="margin:20px 0 0;font-size:12px;color:#aaa;text-align:center;">
+      Need help? Chat with our AI assistant on the platform anytime.
+    </p>
+  `);
+  await send(customerEmail, `Welcome to Eagle Box Cricket, ${customerName}!`, html);
+};
+
 /* ─── Time formatter for emails ─── */
 function formatT(t) {
   if (!t) return '';
@@ -258,6 +287,7 @@ function formatT(t) {
 }
 
 module.exports = {
+  sendWelcomeEmail,
   sendBookingConfirmation,
   sendPaymentSuccess,
   sendPaymentFailed,
