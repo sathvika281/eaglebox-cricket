@@ -6,8 +6,12 @@ import BottomNav from '../components/layout/BottomNav';
 export default function PaymentSuccess() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const ref = params.get('ref');
-  const id  = params.get('id');
+  const ref    = params.get('ref');
+  const id     = params.get('id');
+  const method = params.get('method');
+  const total  = params.get('total');
+
+  const isVenue = method === 'venue';
 
   return (
     <div style={s.page}>
@@ -15,24 +19,48 @@ export default function PaymentSuccess() {
       <div style={s.wrap}>
         <div style={s.glow} />
 
-        <div style={s.iconWrap}>
-          <span className="material-symbols-outlined" style={s.icon}>check_circle</span>
+        <div style={{ ...s.iconWrap, ...(isVenue ? { borderColor: 'rgba(255,200,0,0.3)', backgroundColor: 'rgba(255,200,0,0.08)' } : {}) }}>
+          <span className="material-symbols-outlined" style={{ ...s.icon, ...(isVenue ? { color: '#FFC800' } : {}) }}>
+            {isVenue ? 'store' : 'check_circle'}
+          </span>
         </div>
 
-        <p style={s.tag}>⚡ PAYMENT SUCCESSFUL</p>
-        <h1 style={s.title}>BOOKING CONFIRMED!</h1>
-        <div style={s.divider} />
-        <p style={s.sub}>Your arena slot is locked and payment is complete.</p>
+        <p style={{ ...s.tag, ...(isVenue ? { color: '#FFC800' } : {}) }}>
+          {isVenue ? '🏏 SLOT RESERVED' : '⚡ PAYMENT SUCCESSFUL'}
+        </p>
+        <h1 style={s.title}>{isVenue ? 'BOOKING RESERVED!' : 'BOOKING CONFIRMED!'}</h1>
+        <div style={{ ...s.divider, ...(isVenue ? { backgroundColor: '#FFC800' } : {}) }} />
+        <p style={s.sub}>
+          {isVenue
+            ? 'Your slot is reserved. Please pay at the venue counter on match day to confirm your booking.'
+            : 'Your arena slot is locked and payment is complete.'}
+        </p>
 
         {ref && (
-          <div style={s.refCard}>
+          <div style={{ ...s.refCard, ...(isVenue ? { borderColor: 'rgba(255,200,0,0.2)', backgroundColor: 'rgba(255,200,0,0.04)' } : {}) }}>
             <p style={s.refLabel}>BOOKING REF</p>
-            <p style={s.refValue}>{ref}</p>
-            <p style={s.refHint}>SHOW THIS AT THE VENUE COUNTER</p>
+            <p style={{ ...s.refValue, ...(isVenue ? { color: '#FFC800' } : {}) }}>{ref}</p>
+            {isVenue ? (
+              <>
+                <p style={{ ...s.refHint, color: '#FFC800', marginBottom: 6 }}>SHOW THIS REF AT THE VENUE COUNTER</p>
+                {total && <p style={{ ...s.refHint, fontSize: '13px', color: '#aaa' }}>Amount due: ₹{total}</p>}
+              </>
+            ) : (
+              <p style={s.refHint}>SHOW THIS AT THE VENUE COUNTER</p>
+            )}
           </div>
         )}
 
-        {id && (
+        {isVenue && (
+          <div style={s.venueInfoBox}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#FFC800', marginRight: '8px', flexShrink: 0 }}>info</span>
+            <p style={s.venueInfoText}>
+              Your slot is held for you. Pay at the venue on the day of your booking. The slot will be released if payment is not made.
+            </p>
+          </div>
+        )}
+
+        {!isVenue && id && (
           <button style={s.btnPass} onClick={() => navigate(`/booking-pass/${id}`)}>
             <span className="material-symbols-outlined" style={{ fontSize: '18px', marginRight: '8px' }}>qr_code_2</span>
             VIEW BOOKING PASS
@@ -116,5 +144,13 @@ const s = {
     border: '1px solid #333', borderRadius: '10px', padding: '14px',
     fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em',
     fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer',
+  },
+  venueInfoBox: {
+    width: '100%', display: 'flex', alignItems: 'flex-start',
+    backgroundColor: 'rgba(255,200,0,0.06)', border: '1px solid rgba(255,200,0,0.2)',
+    borderRadius: '10px', padding: '14px 16px', marginBottom: '20px',
+  },
+  venueInfoText: {
+    fontSize: '13px', color: '#aaa', lineHeight: 1.5, margin: 0,
   },
 };

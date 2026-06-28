@@ -197,6 +197,26 @@ export default function Booking() {
     }
   };
 
+  const handlePayAtVenue = async () => {
+    if (!selectedSlot) return;
+    setConfirming(true);
+    setError('');
+    try {
+      const { data: bookingData } = await createBooking(
+        selectedSlot.id,
+        numPlayers,
+        promoData?.code || null,
+        rentalList
+      );
+      const bookingId  = bookingData.booking.id;
+      const bookingRef = bookingData.booking.booking_ref;
+      navigate(`/payment-success?ref=${bookingRef}&id=${bookingId}&method=venue&total=${total}`);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Booking failed. Please try again.');
+      setConfirming(false);
+    }
+  };
+
   /* ── OVERVIEW STEP ── */
   if (step === 'overview' && selectedSlot) {
     return (
@@ -328,13 +348,24 @@ export default function Booking() {
           </div>
 
           <button style={s.confirmBtn} onClick={handleConfirm} disabled={confirming}>
-            {confirming ? 'CONFIRMING...' : 'CONFIRM & PAY'}
-            {!confirming && <span className="material-symbols-outlined" style={{ fontSize: 16, marginLeft: 8 }}>arrow_forward</span>}
+            {confirming ? 'PROCESSING...' : 'CONFIRM & PAY ONLINE'}
+            {!confirming && <span className="material-symbols-outlined" style={{ fontSize: 16, marginLeft: 8 }}>payment</span>}
           </button>
           <p style={s.secureNote}>
             <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>shield</span>
             Safe & Secure Booking via Razorpay
           </p>
+
+          <div style={s.orDivider}>
+            <div style={s.orLine} /><span style={s.orText}>OR</span><div style={s.orLine} />
+          </div>
+
+          <button style={s.venueBtn} onClick={handlePayAtVenue} disabled={confirming}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18, marginRight: 8 }}>store</span>
+            PAY AT VENUE
+          </button>
+          <p style={s.venueNote}>Reserve your slot now — pay ₹{total} at the venue counter on match day.</p>
+
           <button style={s.backLink} onClick={() => setStep('select')}>← Change Selection</button>
         </div>
         <BottomNav />
@@ -535,6 +566,11 @@ const s = {
   overviewDivider: { height: 1, backgroundColor: '#222' },
   confirmBtn: { width: '100%', backgroundColor: '#BFFF00', color: '#000', border: 'none', borderRadius: 10, padding: 16, fontSize: 13, fontWeight: 700, letterSpacing: '0.1em', fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   secureNote: { display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 12, marginBottom: 16 },
+  orDivider: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 },
+  orLine: { flex: 1, height: 1, backgroundColor: '#222' },
+  orText: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#444', letterSpacing: '0.12em' },
+  venueBtn: { width: '100%', backgroundColor: 'transparent', color: '#fff', border: '1px solid #333', borderRadius: 10, padding: 15, fontSize: 13, fontWeight: 700, letterSpacing: '0.1em', fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  venueNote: { textAlign: 'center', fontSize: 12, color: '#555', marginBottom: 16, lineHeight: 1.5 },
   backLink: { background: 'none', border: 'none', color: '#BFFF00', fontSize: 13, cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'center', padding: 8 },
   stepperWrap: { display: 'flex', alignItems: 'center', gap: 12 },
   stepperBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#222', border: '1px solid #333', color: '#fff', fontSize: 16, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, padding: 0 },
