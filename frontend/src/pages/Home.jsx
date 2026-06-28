@@ -5,12 +5,6 @@ import { getSlots } from '../api/slots.api';
 import { formatTime, formatDateShort } from '../utils/formatters';
 import BottomNav from '../components/layout/BottomNav';
 
-const STATS = [
-  { value: '5000+', label: 'ACTIVE PLAYERS' },
-  { value: '1000+', label: 'MATCHES PLAYED' },
-  { value: '250+',  label: 'REGISTRATIONS'  },
-];
-
 const FEATURES = [
   { icon: 'bolt',          title: 'INSTANT BOOKING',    desc: 'Reserve your slot in seconds. No calls, no waiting.' },
   { icon: 'schedule',      title: 'REAL-TIME SLOTS',    desc: 'Live availability — always up to date.' },
@@ -82,16 +76,6 @@ export default function Home() {
           </button>
         </div>
       </section>
-
-      {/* Stats bar */}
-      <div style={s.statsBar}>
-        {STATS.map(({ value, label }) => (
-          <div key={label} style={s.statItem}>
-            <span style={s.statValue}>{value}</span>
-            <span style={s.statLabel}>{label}</span>
-          </div>
-        ))}
-      </div>
 
       {/* Available slots today */}
       <section style={s.section}>
@@ -298,21 +282,6 @@ const s = {
     fontFamily: "'JetBrains Mono', monospace",
   },
   btnIcon: { fontSize: '16px' },
-
-  statsBar: {
-    display: 'flex', justifyContent: 'space-around',
-    padding: '20px 16px', borderTop: '1px solid #1e1e22',
-    borderBottom: '1px solid #1e1e22', backgroundColor: '#111113',
-  },
-  statItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' },
-  statValue: {
-    fontFamily: "'JetBrains Mono', monospace", fontSize: '22px',
-    fontWeight: 700, color: '#BFFF00',
-  },
-  statLabel: {
-    fontFamily: "'JetBrains Mono', monospace", fontSize: '9px',
-    letterSpacing: '0.1em', color: '#555',
-  },
 
   section: { padding: '32px 16px' },
   sectionHead: {
