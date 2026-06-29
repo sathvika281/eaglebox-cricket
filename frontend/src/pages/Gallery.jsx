@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getAllPhotos, addMatchPhoto, deletePhoto, uploadPhoto } from '../api/gallery.api';
+import React, { useState, useEffect } from 'react';
+import { getAllPhotos, addMatchPhoto, deletePhoto } from '../api/gallery.api';
 import { getMyMatches } from '../api/matches.api';
 import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
@@ -12,11 +12,9 @@ export default function Gallery() {
   const [showAdd, setShowAdd]   = useState(false);
   const [matchId, setMatchId]   = useState('');
   const [caption, setCaption]   = useState('');
-  const [preview, setPreview]   = useState(null);
-  const [file, setFile]         = useState(null);
+  const [photoUrl, setPhotoUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError]       = useState('');
-  const fileRef = useRef();
 
   const loadPhotos = () =>
     getAllPhotos()
@@ -33,31 +31,20 @@ export default function Gallery() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleFileChange = (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    if (f.size > 5 * 1024 * 1024) { setError('Image must be under 5 MB'); return; }
-    setFile(f);
-    setError('');
-    const reader = new FileReader();
-    reader.onload = (ev) => setPreview(ev.target.result);
-    reader.readAsDataURL(f);
-  };
-
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!matchId) { setError('Please select a match'); return; }
-    if (!file)    { setError('Please choose a photo'); return; }
+    if (!matchId)  { setError('Please select a match'); return; }
+    if (!photoUrl.trim()) { setError('Please enter a photo URL'); return; }
+    if (!photoUrl.startsWith('http')) { setError('URL must start with http:// or https://'); return; }
     setUploading(true);
     setError('');
     try {
-      const { data: up } = await uploadPhoto(file);
-      await addMatchPhoto(matchId, { photo_url: up.url, caption: caption.trim() || undefined });
+      await addMatchPhoto(matchId, { photo_url: photoUrl.trim(), caption: caption.trim() || undefined });
       setShowAdd(false);
-      setFile(null); setPreview(null); setMatchId(''); setCaption('');
+      setPhotoUrl(''); setMatchId(''); setCaption('');
       loadPhotos();
     } catch (err) {
-      setError(err.response?.data?.message || 'Upload failed — is the server running?');
+      setError(err.response?.data?.message || 'Failed to add photo');
     } finally { setUploading(false); }
   };
 
@@ -70,7 +57,7 @@ export default function Gallery() {
     } catch { setError('Failed to delete photo'); }
   };
 
-  const openAdd = () => { setError(''); setFile(null); setPreview(null); setMatchId(''); setCaption(''); setShowAdd(true); };
+  const openAdd = () => { setError(''); setPhotoUrl(''); setMatchId(''); setCaption(''); setShowAdd(true); };
 
   return (
     <div style={S.page}>
@@ -138,25 +125,22 @@ export default function Gallery() {
                   ))}
                 </select>
 
-                <label style={S.label}>PHOTO *</label>
-                {/* label wraps the input — tap anywhere triggers native picker (camera + gallery on mobile) */}
-                <label style={{ display: 'block', marginBottom: 12, cursor: 'pointer' }}>
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-                  {preview ? (
-                    <div style={{ position: 'relative' }}>
-                      <img src={preview} alt="preview" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, display: 'block' }} />
-                      <span style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.7)', color: '#fff', borderRadius: 6, padding: '4px 8px', fontSize: 11 }}>
-                        ✕ Change
-                      </span>
-                    </div>
-                  ) : (
-                    <div style={S.uploadBox}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 36, color: '#BFFF00' }}>add_photo_alternate</span>
-                      <p style={{ fontSize: 13, color: '#aaa', marginTop: 8 }}>Tap to take a photo or choose from gallery</p>
-                      <p style={{ fontSize: 11, color: '#555', marginTop: 4 }}>JPG · PNG · WEBP · max 5 MB</p>
-                    </div>
-                  )}
-                </label>
+                <label style={S.label}>PHOTO URL *</label>
+                <input
+                  style={S.input}
+                  placeholder="https://i.imgur.com/example.jpg"
+                  value={photoUrl}
+                  onChange={e => setPhotoUrl(e.target.value)}
+                />
+                {photoUrl.startsWith('http') && (
+                  <img
+                    src={photoUrl}
+                    alt="preview"
+                    style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 10, marginTop: 8 }}
+                    onError={e => { e.target.style.display = 'none'; }}
+                    onLoad={e => { e.target.style.display = 'block'; }}
+                  />
+                )}
 
                 <label style={S.label}>CAPTION <span style={{ color: '#444', fontWeight: 400 }}>(optional)</span></label>
                 <input style={S.input} placeholder="e.g. Match winning shot!" value={caption} onChange={e => setCaption(e.target.value)} />
