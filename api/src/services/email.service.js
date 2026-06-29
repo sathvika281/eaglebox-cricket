@@ -1,16 +1,7 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  host:   process.env.EMAIL_HOST,
-  port:   parseInt(process.env.EMAIL_PORT) || 587,
-  secure: process.env.EMAIL_PORT === '465',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
-
-const FROM = process.env.EMAIL_FROM || '"Eagle Box Cricket" <noreply@eagleboxcricket.com>';
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = 'Eagle Box Cricket <onboarding@resend.dev>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 /* ─── Shared layout wrapper ─── */
@@ -82,7 +73,8 @@ const ctaButton = (text, url, color = '#BFFF00', textColor = '#000000') => `
 const send = async (to, subject, html) => {
   if (!to || !to.includes('@')) return;
   try {
-    await transporter.sendMail({ from: FROM, to, subject, html });
+    const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+    if (error) throw new Error(error.message);
     console.log(`📧 Email sent: "${subject}" → ${to}`);
   } catch (err) {
     console.error(`❌ Email failed: "${subject}" → ${to}:`, err.message);
